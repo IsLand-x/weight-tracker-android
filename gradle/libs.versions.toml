@@ -1,0 +1,19 @@
+[versions]
+android-gradle-plugin = "9.4.1"
+appcompat = "1.8.0"
+core = "1.19.1"
+work = "2.11.2"
+junit = "4.13.2"
+robolectric = "4.17"
+material = "1.14.0"
+
+[libraries]
+material = { module = "com.google.android.material:material", version.ref = "material" }
+appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
+core = { module = "androidx.core:core", version.ref = "core" }
+work = { module = "androidx.work:work-runtime", version.ref = "work" }
+junit = { module = "junit:junit", version.ref = "junit" }
+robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "android-gradle-plugin" }

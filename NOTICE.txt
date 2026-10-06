@@ -1,0 +1,32 @@
+Weight Recorder / 体重记录
+License: GNU Affero General Public License, version 3 or later (AGPL-3.0-or-later)
+
+Derived from Gadgetbridge:
+https://codeberg.org/Freeyourgadget/Gadgetbridge/
+Base commit: 86389f5366e6ecf438657e6d412bfb77b83480e2
+
+The Xiaomi scale decoding, characteristic identifiers, time synchronization
+and weight history handshake were adapted from:
+app/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/miscale/WeightMeasurement.java
+app/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/miscale/MiSmartScaleDeviceSupport.java
+app/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/miscale/MiCompositionScaleDeviceSupport.java
+and scale coordinators and Bluetooth definitions from the same project.
+
+WeightMeasurement and MiSmartScaleDeviceSupport:
+Copyright (C) 2024 Severin von Wnuck-Lipinski.
+
+MiCompositionScaleDeviceSupport:
+Copyright (C) 2019-2024 Andreas Shimokawa, Arjan Schrijver, Damien Gaignon,
+Jean-François Greffier.
+
+Additional original project contributors are listed in CONTRIBUTORS.rst.
+The specialized application changes remove wearable-device support and replace
+the UI, storage and service infrastructure with weight-only code,
+including an opt-in user-configured HTTP webhook.
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU Affero General Public License as published by the Free
+Software Foundation, either version 3 of the License, or (at your option) any
+later version. This program is distributed WITHOUT ANY WARRANTY, including
+without implied warranties of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+PURPOSE. See LICENSE for the complete license text.

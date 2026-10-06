@@ -1,0 +1,26 @@
+<resources>
+    <style name="Theme.WeightRecorder" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="wrTextButtonStyle">@style/Widget.Material3.Button.TextButton</item>
+        <item name="colorPrimary">@color/wr_primary</item>
+        <item name="colorError">@color/wr_error</item>
+        <item name="colorOnPrimary">@color/wr_on_primary</item>
+        <item name="colorPrimaryContainer">@color/wr_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/wr_text</item>
+        <item name="colorSecondary">@color/wr_primary</item>
+        <item name="colorSecondaryContainer">@color/wr_primary_container</item>
+        <item name="colorOnSecondaryContainer">@color/wr_text</item>
+        <item name="colorSurface">@color/wr_surface</item>
+        <item name="colorSurfaceContainer">@color/wr_surface</item>
+        <item name="colorSurfaceContainerLow">@color/wr_surface</item>
+        <item name="colorSurfaceContainerHigh">@color/wr_surface</item>
+        <item name="colorSurfaceContainerHighest">@color/wr_grid</item>
+        <item name="colorSurfaceVariant">@color/wr_background</item>
+        <item name="colorOnSurface">@color/wr_text</item>
+        <item name="colorOnSurfaceVariant">@color/wr_muted</item>
+        <item name="colorOutline">@color/wr_outline</item>
+        <item name="colorOutlineVariant">@color/wr_grid</item>
+        <item name="android:colorBackground">@color/wr_background</item>
+        <item name="android:fontFamily">sans</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+</resources>
