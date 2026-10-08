@@ -31,7 +31,7 @@ public class WeightChartViewTest {
         float x1 = left + (float) ((first.timeMillis - start) / (double) (end - start)) * width;
         float x2 = left + (float) ((second.timeMillis - start) / (double) (end - start)) * width;
         // Points on the same day are close horizontally; y must distinguish them.
-        float top = 40 * density, bottom = 260 - 70 * density;
+        float top = 34 * density, bottom = 260 - 64 * density;
         float y1 = bottom - (bottom - top) / 6, y2 = top + (bottom - top) / 6;
         touch(view, MotionEvent.ACTION_DOWN, x1, y1);
         assertTrue(view.getContentDescription().toString().contains("70.0公斤"));

@@ -11,7 +11,7 @@ import java.util.List;
 
 public final class WeightDatabase extends SQLiteOpenHelper {
     public static final class Record {
-        public long id, timeMillis; public double weight; public String endpoint, state, message, device;
+        public long id, timeMillis; public double weight; public String endpoint, state, message, device, source;
     }
     private static WeightDatabase instance;
     public static synchronized WeightDatabase get(Context c) {
@@ -55,9 +55,9 @@ public final class WeightDatabase extends SQLiteOpenHelper {
     }
     private Record record(Cursor c) {
         Record r = new Record(); r.id = c.getLong(0); r.timeMillis = c.getLong(1); r.weight = c.getDouble(2);
-        r.device = c.getString(3); r.endpoint = c.getString(4); r.state = c.getString(5); r.message = c.getString(6); return r;
+        r.device = c.getString(3); r.endpoint = c.getString(4); r.state = c.getString(5); r.message = c.getString(6); r.source = c.getString(7); return r;
     }
-    private static final String COLUMNS = "id,time_ms,weight,device,endpoint,state,message";
+    private static final String COLUMNS = "id,time_ms,weight,device,endpoint,state,message,source";
     public Record find(long id) {
         try (Cursor c = getReadableDatabase().rawQuery("SELECT " + COLUMNS + " FROM weight WHERE id=?", new String[]{Long.toString(id)})) { return c.moveToFirst() ? record(c) : null; }
     }

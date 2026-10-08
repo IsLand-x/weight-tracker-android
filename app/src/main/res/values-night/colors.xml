@@ -1,13 +1,13 @@
 <resources>
-    <color name="wr_primary">#A0D5B8</color>
-    <color name="wr_afternoon">#F2C16D</color>
+    <color name="wr_primary">#83CDBC</color>
+    <color name="wr_afternoon">#E4BD77</color>
     <color name="wr_on_primary">#003825</color>
-    <color name="wr_primary_container">#244C39</color>
-    <color name="wr_background">#101813</color>
-    <color name="wr_surface">#1B2620</color>
-    <color name="wr_text">#E3EDE4</color>
-    <color name="wr_muted">#B1C2B5</color>
-    <color name="wr_outline">#8B9D8E</color>
-    <color name="wr_grid">#35483B</color>
+    <color name="wr_primary_container">#213D38</color>
+    <color name="wr_background">#0F161B</color>
+    <color name="wr_surface">#192329</color>
+    <color name="wr_text">#E9F0F3</color>
+    <color name="wr_muted">#A5B5BE</color>
+    <color name="wr_outline">#879BA5</color>
+    <color name="wr_grid">#2D3B43</color>
     <color name="wr_error">#FFB4AB</color>
 </resources>

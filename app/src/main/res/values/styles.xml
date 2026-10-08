@@ -1,10 +1,4 @@
 <resources>
-    <style name="ThemeOverlay.WeightRecorder.BottomSheetDialog" parent="ThemeOverlay.Material3.BottomSheetDialog">
-        <item name="android:windowAnimationStyle">@style/Animation.WeightRecorder.BottomSheetDialog</item>
-    </style>
-    <style name="Animation.WeightRecorder.BottomSheetDialog" parent="Animation.Material3.BottomSheetDialog">
-        <item name="android:windowExitAnimation">@null</item>
-    </style>
     <style name="Theme.WeightRecorder" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="wrTextButtonStyle">@style/Widget.Material3.Button.TextButton</item>
         <item name="colorPrimary">@color/wr_primary</item>

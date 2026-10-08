@@ -61,8 +61,8 @@ public final class WeightChartView extends View {
     }
     private float left() { return dp(47); }
     private float right() { return getWidth() - dp(16); }
-    private float top() { return dp(40); }
-    private float bottom() { return getHeight() - dp(70); }
+    private float top() { return dp(34); }
+    private float bottom() { return getHeight() - dp(64); }
     private List<WeightDatabase.Record> windowRecords() {
         long start = ChartWindow.start(end, period); List<WeightDatabase.Record> result = new ArrayList<>();
         for (WeightDatabase.Record r : records) if (r.timeMillis >= start && r.timeMillis <= end) result.add(r);
@@ -127,7 +127,7 @@ public final class WeightChartView extends View {
             float x = x(selected); int color = periods.isMorning(selected.timeMillis) ? morningColor : afternoonColor;
             paint.setColor(color); paint.setStrokeWidth(dp(1)); canvas.drawLine(x, top(), x, bottom(), paint);
             label(canvas, String.format(Locale.getDefault(), "%s · %.2f kg", periods.label(selected.timeMillis), selected.weight), left(), bottom() + dp(42), color, 13);
-            label(canvas, format(detailFormat, selected.timeMillis), left(), bottom() + dp(61), text, 12);
+            label(canvas, format(detailFormat, selected.timeMillis), left(), bottom() + dp(59), text, 12);
         } else label(canvas, "点击或滑动查看称重时间和体重", left(), bottom() + dp(45), text, 12);
     }
     private void selectAt(float touchX, float touchY) {
