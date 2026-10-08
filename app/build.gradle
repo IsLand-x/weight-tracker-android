@@ -5,6 +5,15 @@ java { toolchain.languageVersion = JavaLanguageVersion.of(21) }
 def releaseSigningFile = rootProject.file('.local-dev/signing.properties')
 def releaseSigning = new Properties()
 if (releaseSigningFile.exists()) releaseSigningFile.withInputStream { releaseSigning.load(it) }
+def ciKeystorePath = System.getenv('ANDROID_KEYSTORE_PATH')
+def hasCiSigning = ciKeystorePath != null && !ciKeystorePath.isBlank()
+if (hasCiSigning) {
+    ['ANDROID_KEYSTORE_PASSWORD', 'ANDROID_KEY_ALIAS', 'ANDROID_KEY_PASSWORD'].each { name ->
+        if (!System.getenv(name)) throw new GradleException("Missing signing environment variable: ${name}")
+    }
+    if (!file(ciKeystorePath).isFile()) throw new GradleException('CI signing keystore does not exist')
+}
+def hasReleaseSigning = hasCiSigning || releaseSigningFile.exists()
 
 android {
     namespace = 'org.freeyourgadget.weightrecorder'
@@ -21,12 +30,12 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     signingConfigs {
-        if (releaseSigningFile.exists()) {
+        if (hasReleaseSigning) {
             localRelease {
-                storeFile rootProject.file(releaseSigning.getProperty('storeFile'))
-                storePassword releaseSigning.getProperty('storePassword')
-                keyAlias releaseSigning.getProperty('keyAlias')
-                keyPassword releaseSigning.getProperty('keyPassword')
+                storeFile hasCiSigning ? file(ciKeystorePath) : rootProject.file(releaseSigning.getProperty('storeFile'))
+                storePassword hasCiSigning ? System.getenv('ANDROID_KEYSTORE_PASSWORD') : releaseSigning.getProperty('storePassword')
+                keyAlias hasCiSigning ? System.getenv('ANDROID_KEY_ALIAS') : releaseSigning.getProperty('keyAlias')
+                keyPassword hasCiSigning ? System.getenv('ANDROID_KEY_PASSWORD') : releaseSigning.getProperty('keyPassword')
             }
         }
     }
@@ -38,7 +47,7 @@ android {
             matchingFallbacks = ['debug']
         }
         release {
-            if (releaseSigningFile.exists()) signingConfig signingConfigs.localRelease
+            if (hasReleaseSigning) signingConfig signingConfigs.localRelease
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt')
