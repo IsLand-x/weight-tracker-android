@@ -2,6 +2,7 @@
 package org.freeyourgadget.weightrecorder;
 
 import android.Manifest;
+import android.app.TimePickerDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.le.BluetoothLeScanner;
@@ -38,6 +39,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.button.MaterialButtonToggleGroup;
 import com.google.android.material.card.MaterialCardView;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
+import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.materialswitch.MaterialSwitch;
 import com.google.android.material.textfield.TextInputLayout;
@@ -58,6 +61,10 @@ import java.util.UUID;
 public class MainActivity extends AppCompatActivity {
     private TextView deviceInfo, latest, latestDate, delivery;
     private LinearLayout history;
+    private BottomSheetDialog historyDialog;
+    private ArrayAdapter<String> historyAdapter;
+    private List<WeightDatabase.Record> historyRecords = new ArrayList<>();
+    private TextView historyTitle;
     private Button connect;
     private WeightChartView chart;
     private int text, muted, background, primary, surface, container;
@@ -108,7 +115,11 @@ public class MainActivity extends AppCompatActivity {
         delivery = label("连接体重秤后，称重会自动保存", 13, primary); delivery.setTextIsSelectable(true); summary.addView(delivery); space(root, 16);
 
         LinearLayout trend = card(root, surface, 16); trend.addView(label("体重趋势", 18, text));
-        chart = new WeightChartView(this, muted, color(R.color.wr_grid), primary); trend.addView(chart, new LinearLayout.LayoutParams(-1, dp(236)));
+        LinearLayout legend = row();
+        legend.addView(label("● 上午", 13, primary), new LinearLayout.LayoutParams(0, -2, 1));
+        legend.addView(label("◆ 下午", 13, color(R.color.wr_afternoon))); trend.addView(legend);
+        chart = new WeightChartView(this, muted, color(R.color.wr_grid), primary, color(R.color.wr_afternoon));
+        trend.addView(chart, new LinearLayout.LayoutParams(-1, dp(260)));
         MaterialButtonToggleGroup periods = new MaterialButtonToggleGroup(this); periods.setSingleSelection(true); periods.setSelectionRequired(true);
         int[] values = {7, 30, 365}; String[] titles = {"近 7 天", "近 30 天", "近一年"};
         int initial = Settings.prefs(this).getInt("period", 7);
@@ -124,13 +135,18 @@ public class MainActivity extends AppCompatActivity {
             Settings.prefs(this).edit().putInt("period", period).apply(); chart.setPeriod(period);
         });
         chart.setPeriod(initial); trend.addView(periods); space(trend, 8);
-        trend.addView(label("左右拖动查看历史 · 点击查看体重", 11, muted)); space(root, 16);
+        MaterialSwitch browse = new MaterialSwitch(this); browse.setText("浏览更早的记录"); browse.setMinHeight(dp(48));
+        browse.setOnCheckedChangeListener((button, checked) -> chart.setBrowseHistory(checked)); trend.addView(browse);
+        trend.addView(label("点击或滑动查看数据 · 开启历史浏览后左右拖动切换日期", 11, muted)); space(root, 16);
         LinearLayout device = card(root, surface, 20); LinearLayout deviceHeading = row();
         deviceHeading.addView(label("我的体重秤", 16, text), new LinearLayout.LayoutParams(0, dp(48), 1));
         MaterialButton choose = textButton("选择 / 更换"); choose.setOnClickListener(v -> beginScanWithPermissions()); deviceHeading.addView(choose); device.addView(deviceHeading);
         deviceInfo = label("未连接体重秤", 13, muted); device.addView(deviceInfo); space(device, 12);
         connect = button("连接体重秤"); connect.setOnClickListener(v -> connectionAction()); device.addView(connect, new LinearLayout.LayoutParams(-1, dp(48))); space(root, 16);
-        LinearLayout recent = card(root, surface, 20); recent.addView(label("最近记录", 18, text)); history = column(); recent.addView(history);
+        LinearLayout recent = card(root, surface, 20); LinearLayout recentHeading = row();
+        recentHeading.addView(label("最近记录", 18, text), new LinearLayout.LayoutParams(0, -2, 1));
+        MaterialButton more = textButton("更多"); more.setOnClickListener(v -> showAllRecords()); recentHeading.addView(more);
+        recent.addView(recentHeading); history = column(); recent.addView(history);
         setContentView(scroll); refresh();
     }
     private int color(int resource) { return ContextCompat.getColor(this, resource); }
@@ -168,6 +184,7 @@ public class MainActivity extends AppCompatActivity {
     }
     private void refresh() {
         List<WeightDatabase.Record> records = WeightDatabase.get(this).all(); chart.setRecords(records);
+        refreshAllRecords(records);
         boolean tracking = Settings.prefs(this).getBoolean("tracking", false);
         String name = Settings.prefs(this).getString("name", "未选择体重秤");
         String type = Settings.prefs(this).getString("type_label", ""); String model = Settings.prefs(this).getString("model", "");
@@ -179,26 +196,74 @@ public class MainActivity extends AppCompatActivity {
         delivery.setText(recordState(last.state) + (last.message.isEmpty() ? "" : " · " + last.message));
         delivery.setTextColor(last.state.equals("failed") ? color(R.color.wr_error) : last.state.equals("success") ? primary : muted);
         delivery.setOnClickListener(v -> showRecord(last));
-        for (int i = records.size() - 1; i >= Math.max(0, records.size() - 5); i--) {
+        for (int i = records.size() - 1; i >= Math.max(0, records.size() - 3); i--) {
             WeightDatabase.Record r = records.get(i); LinearLayout item = row(); item.setPadding(0, dp(8), 0, dp(8));
-            item.addView(label(formatDate(r.timeMillis) + "\n" + recordState(r.state), 13, muted), new LinearLayout.LayoutParams(0, -2, 1));
+            item.setMinimumHeight(dp(64));
+            item.addView(label(formatDate(r.timeMillis) + " · " + Settings.periods(this).label(r.timeMillis) + "\n" + recordState(r.state), 13, muted), new LinearLayout.LayoutParams(0, -2, 1));
             item.addView(label(String.format(Locale.getDefault(), "%.2f kg", r.weight), 19, text)); item.setOnClickListener(v -> showRecord(r));
             item.setFocusable(true); item.setContentDescription(formatDate(r.timeMillis) + "，" + r.weight + "公斤，" + recordState(r.state)); history.addView(item);
         }
     }
+    private void showAllRecords() {
+        if (historyDialog != null && historyDialog.isShowing()) return;
+        historyDialog = new BottomSheetDialog(this, R.style.ThemeOverlay_WeightRecorder_BottomSheetDialog);
+        historyDialog.setDismissWithAnimation(false);
+        LinearLayout content = column(); content.setPadding(dp(20), dp(8), dp(20), 0);
+        LinearLayout heading = row(); historyTitle = label("全部记录", 20, text);
+        heading.addView(historyTitle, new LinearLayout.LayoutParams(0, -2, 1));
+        MaterialButton close = textButton("关闭"); close.setOnClickListener(v -> historyDialog.dismiss()); heading.addView(close); content.addView(heading);
+        ListView list = new ListView(this);
+        historyAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, new ArrayList<>());
+        list.setAdapter(historyAdapter); TextView empty = label("暂无体重记录", 14, muted); content.addView(empty); list.setEmptyView(empty);
+        content.addView(list, new LinearLayout.LayoutParams(-1, 0, 1));
+        list.setOnItemClickListener((parent, view, position, id) -> showRecord(historyRecords.get(position)));
+        historyDialog.setContentView(content);
+        historyDialog.setOnDismissListener(d -> { historyAdapter = null; historyTitle = null; historyRecords = new ArrayList<>(); });
+        historyDialog.show();
+        int availableHeight = findViewById(android.R.id.content).getHeight();
+        int sheetHeight = Math.round(availableHeight * .7f);
+        View sheet = historyDialog.findViewById(com.google.android.material.R.id.design_bottom_sheet);
+        if (sheet != null) {
+            sheet.getLayoutParams().height = sheetHeight; sheet.requestLayout();
+            historyDialog.getBehavior().setPeekHeight(sheetHeight);
+            historyDialog.getBehavior().setSkipCollapsed(true);
+            historyDialog.getBehavior().setState(BottomSheetBehavior.STATE_EXPANDED);
+        }
+        refreshAllRecords(WeightDatabase.get(this).all());
+    }
+    private void refreshAllRecords(List<WeightDatabase.Record> records) {
+        if (historyAdapter == null) return;
+        historyRecords = new ArrayList<>(records); java.util.Collections.reverse(historyRecords);
+        historyTitle.setText("全部记录（" + records.size() + "）"); historyAdapter.clear();
+        for (WeightDatabase.Record r : historyRecords) historyAdapter.add(String.format(Locale.getDefault(), "%.2f kg · %s\n%s · %s",
+                r.weight, Settings.periods(this).label(r.timeMillis), formatDate(r.timeMillis), recordState(r.state)));
+        historyAdapter.notifyDataSetChanged();
+    }
     private void showRecord(WeightDatabase.Record r) {
-        String message = formatDate(r.timeMillis) + "\n" + recordState(r.state) + "\n" + r.message;
+        String message = formatDate(r.timeMillis) + " · " + Settings.periods(this).label(r.timeMillis) + "\n" + recordState(r.state) + "\n" + r.message;
         if (r.state.equals("failed")) message += "\n\n若请求超时，服务端可能已收到。请先确认当日记录，再重试。";
         AlertDialog.Builder builder = new MaterialAlertDialogBuilder(this).setTitle(String.format(Locale.getDefault(), "%.2f kg", r.weight)).setMessage(message).setNegativeButton("关闭", null);
-        if ((r.state.equals("failed") || r.state.equals("local")) && !Settings.endpoint(this).isEmpty()) {
+        if ((r.state.equals("failed") || r.state.equals("local")) && !Settings.endpoint(this, r.timeMillis).isEmpty()) {
             builder.setPositiveButton(r.state.equals("failed") ? "重试发送" : "发送这条记录", (d, w) -> {
-                if (WeightDatabase.get(this).prepareRetry(r.id, Settings.endpoint(this))) { WebhookWorker.enqueue(this, r.id); refresh(); }
+                if (WeightDatabase.get(this).prepareRetry(r.id, Settings.endpoint(this, r.timeMillis))) { WebhookWorker.enqueue(this, r.id); refresh(); }
             });
         }
         builder.show();
     }
     private void showSettings() {
         LinearLayout content = column(); content.setPadding(dp(24), dp(8), dp(24), dp(8));
+        WeighingPeriods saved = Settings.periods(this); int[] times = {saved.morningStart, saved.morningEnd};
+        content.addView(label("上午称重时段", 16, text));
+        LinearLayout timeButtons = row(); MaterialButton start = textButton("开始 " + WeighingPeriods.time(times[0]));
+        MaterialButton end = textButton("结束 " + WeighingPeriods.time(times[1]));
+        timeButtons.addView(start, new LinearLayout.LayoutParams(0, dp(48), 1)); timeButtons.addView(end, new LinearLayout.LayoutParams(0, dp(48), 1)); content.addView(timeButtons);
+        content.addView(label("下午称重时段", 16, text)); TextView afternoon = label(saved.afternoonRange() + " · 自动使用剩余时间", 13, muted); content.addView(afternoon);
+        TextView timeError = label("", 12, color(R.color.wr_error)); timeError.setVisibility(View.GONE); content.addView(timeError);
+        start.setOnClickListener(v -> choosePeriodTime(times, 0, start, end, afternoon, timeError));
+        end.setOnClickListener(v -> choosePeriodTime(times, 1, start, end, afternoon, timeError));
+        content.addView(label("开始时间包含在上午，结束时间归入下午；使用手机本地时间。修改时段会重新归类已有记录。", 12, muted));
+        MaterialSwitch morningWebhook = periodWebhookSwitch(content, "上午记录调用 Webhook", "morning_webhook");
+        MaterialSwitch afternoonWebhook = periodWebhookSwitch(content, "下午记录调用 Webhook", "afternoon_webhook"); space(content, 12);
         MaterialSwitch enabled = new MaterialSwitch(this); enabled.setText("启用 Webhook"); enabled.setMinHeight(dp(48)); enabled.setChecked(Settings.prefs(this).getBoolean("webhook_enabled", false)); content.addView(enabled); space(content, 16);
         TextInputLayout field = new TextInputLayout(this); field.setBoxBackgroundMode(TextInputLayout.BOX_BACKGROUND_OUTLINE); field.setHint("Webhook 地址");
         EditText endpoint = new TextInputEditText(field.getContext()); endpoint.setSingleLine(true); endpoint.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI);
@@ -209,14 +274,31 @@ public class MainActivity extends AppCompatActivity {
             content.addView(label("未允许通知时，结果仍会显示在首页。", 12, muted));
         }
         content.addView(label("基于 Gadgetbridge · AGPLv3\n仅支持小米/华米及标准蓝牙体重秤", 12, muted));
-        AlertDialog dialog = new MaterialAlertDialogBuilder(this).setTitle("设置").setView(content).setNegativeButton("取消", null).setPositiveButton("保存", null).create();
+        ScrollView settingsScroll = new ScrollView(this); settingsScroll.addView(content);
+        AlertDialog dialog = new MaterialAlertDialogBuilder(this).setTitle("设置").setView(settingsScroll).setNegativeButton("取消", null).setPositiveButton("保存", null).create();
         dialog.setOnShowListener(d -> dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
             String url = endpoint.getText().toString().trim();
+            if (times[0] == times[1]) { timeError.setText("开始和结束时间必须不同"); timeError.setVisibility(View.VISIBLE); return; }
             if ((!url.isEmpty() || enabled.isChecked()) && !WebhookContract.validUrl(url)) { field.setError("请输入完整的 HTTP 或 HTTPS 地址"); return; }
-            Settings.prefs(this).edit().putString("endpoint", url).putBoolean("webhook_enabled", enabled.isChecked()).apply(); dialog.dismiss();
+            Settings.prefs(this).edit().putString("endpoint", url).putBoolean("webhook_enabled", enabled.isChecked())
+                    .putInt("morning_start", times[0]).putInt("morning_end", times[1])
+                    .putBoolean("morning_webhook", morningWebhook.isChecked()).putBoolean("afternoon_webhook", afternoonWebhook.isChecked()).apply();
+            dialog.dismiss(); refresh();
             if (enabled.isChecked() && Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED)
                 requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 20);
         })); dialog.show();
+    }
+    private MaterialSwitch periodWebhookSwitch(LinearLayout content, String title, String key) {
+        MaterialSwitch toggle = new MaterialSwitch(this); toggle.setText(title); toggle.setMinHeight(dp(48));
+        toggle.setChecked(Settings.prefs(this).getBoolean(key, true)); content.addView(toggle); return toggle;
+    }
+    private void choosePeriodTime(int[] times, int index, MaterialButton start, MaterialButton end, TextView afternoon, TextView error) {
+        new TimePickerDialog(this, (picker, hour, minute) -> {
+            times[index] = hour * 60 + minute;
+            start.setText("开始 " + WeighingPeriods.time(times[0])); end.setText("结束 " + WeighingPeriods.time(times[1]));
+            error.setVisibility(times[0] == times[1] ? View.VISIBLE : View.GONE); error.setText("开始和结束时间必须不同");
+            afternoon.setText(times[0] == times[1] ? "请先设置有效的上午时段" : new WeighingPeriods(times[0], times[1]).afternoonRange() + " · 自动使用剩余时间");
+        }, times[index] / 60, times[index] % 60, true).show();
     }
     private boolean hasBluetoothPermissions() {
         if (Build.VERSION.SDK_INT >= 31) return ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_GRANTED
@@ -299,5 +381,8 @@ public class MainActivity extends AppCompatActivity {
     @Override protected void onStop() {
         stopScan(); if (registered) { unregisterReceiver(changed); registered = false; } super.onStop();
     }
-    @Override protected void onDestroy() { stopScan(); handler.removeCallbacksAndMessages(null); super.onDestroy(); }
+    @Override protected void onDestroy() {
+        if (historyDialog != null) historyDialog.dismiss();
+        stopScan(); handler.removeCallbacksAndMessages(null); super.onDestroy();
+    }
 }

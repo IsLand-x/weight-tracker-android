@@ -177,7 +177,7 @@ public class ScaleService extends Service {
             List<ScaleProtocol.Measurement> samples = ScaleProtocol.decode(kind, bytes, System.currentTimeMillis());
             for (ScaleProtocol.Measurement decoded : samples) {
                 ScaleProtocol.Measurement sample = historical ? decoded : ScaleProtocol.liveTime(decoded, System.currentTimeMillis());
-                String endpoint = historical ? "" : Settings.endpoint(this);
+                String endpoint = historical ? "" : Settings.endpoint(this, sample.timeMillis);
                 long id = WeightDatabase.get(this).save(sample, address, endpoint, historical);
                 if (id >= 0 && !endpoint.isEmpty()) WebhookWorker.enqueue(this, id);
             }

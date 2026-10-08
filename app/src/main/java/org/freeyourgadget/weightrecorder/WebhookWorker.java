@@ -26,8 +26,8 @@ public class WebhookWorker extends Worker {
         if (record.state.equals("sending")) {
             db.update(id, "failed", "上次发送中断，结果未知。请确认服务端记录后再重试。"); changed(context); return Result.success();
         }
-        if (Settings.endpoint(context).isEmpty()) {
-            db.update(id, "local", "Webhook 已关闭，仅保存在本机"); changed(context); return Result.success();
+        if (Settings.endpoint(context, record.timeMillis).isEmpty()) {
+            db.update(id, "local", "Webhook 或该称重时段的发送已关闭，仅保存在本机"); changed(context); return Result.success();
         }
         db.update(id, "sending", "正在发送"); changed(context);
         String message;

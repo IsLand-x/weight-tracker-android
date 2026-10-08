@@ -1,5 +1,6 @@
 <resources>
     <color name="wr_primary">#A0D5B8</color>
+    <color name="wr_afternoon">#F2C16D</color>
     <color name="wr_on_primary">#003825</color>
     <color name="wr_primary_container">#244C39</color>
     <color name="wr_background">#101813</color>
