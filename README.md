@@ -83,6 +83,12 @@ adb -s <设备序列号> install -r app/build/outputs/apk/preview/app-preview.ap
 
 包名为 `org.freeyourgadget.weightrecorder`，可以与 Gadgetbridge 同时安装，数据库独立，不自动迁移原应用的数据。调试包可直接安装；发布版本应使用自己的签名密钥。
 
+## GitHub Actions 正式版打包
+
+向 `main` 推送代码或在 Actions → Android Release 点击 `Run workflow`，会自动测试、检查并生成签名正式版 APK。APK 与校验文件在运行页 Summary/Artifacts 下载，保留 90 天。
+
+签名密钥通过 GitHub Actions Secrets 管理，沿用本机正式版密钥，支持覆盖升级。邮件使用 GitHub 原生 Actions 通知：在账号通知设置开启 Actions 的 Email，并取消仅失败通知。完整配置见 [自动打包与通知说明](docs/release-pipeline.md)。
+
 ## 来源与许可证
 
 这是独立的专用版本，源自 [Gadgetbridge](https://codeberg.org/Freeyourgadget/Gadgetbridge/) 的提交 `86389f5366e6ecf438657e6d412bfb77b83480e2`。当前工作分支为 `codex/weight-recorder`，原代码保留在 Git 历史中。
