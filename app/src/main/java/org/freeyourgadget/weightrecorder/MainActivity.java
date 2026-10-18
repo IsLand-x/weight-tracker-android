@@ -320,6 +320,7 @@ public class MainActivity extends AppCompatActivity {
     @Override protected void onStart() {
         super.onStart(); ContextCompat.registerReceiver(this, changed, new IntentFilter(getPackageName() + ".CHANGED"), ContextCompat.RECEIVER_NOT_EXPORTED); registered = true; refresh();
         autoConnectIfConfigured();
+        AppUpdateManager.checkForUpdates(this, true);
     }
     @Override protected void onStop() {
         stopScan(); if (registered) { unregisterReceiver(changed); registered = false; } super.onStop();

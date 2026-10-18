@@ -43,6 +43,8 @@ def main():
     artifact = f"weight-recorder-{version}-release-{os.environ['GITHUB_RUN_ID']}-{os.environ['GITHUB_RUN_ATTEMPT']}"
     with open(os.environ["GITHUB_OUTPUT"], "a") as stream:
         stream.write(f"artifact_name={artifact}\n")
+        stream.write(f"version_name={version}\n")
+        stream.write(f"apk_name={name}\n")
     print(f"Verified {name}; certificate SHA-256: {expected}; APK SHA-256: {checksum}")
 
 

@@ -81,7 +81,13 @@ public class SettingsActivity extends AppCompatActivity {
             allow.setOnClickListener(v -> requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 20)); notification.addView(allow);
             ui.space(content, 16);
         }
-        content.addView(ui.label("体重记录 " + BuildConfig.VERSION_NAME + "\n基于 Gadgetbridge · AGPLv3", 12, ui.muted));
+        LinearLayout aboutCard = ui.card(content, 16);
+        aboutCard.addView(ui.title("关于与更新", 16));
+        aboutCard.addView(ui.label("当前版本：v" + BuildConfig.VERSION_NAME + " (" + BuildConfig.VERSION_CODE + ")\n基于 Gadgetbridge · AGPLv3", 13, ui.muted));
+        ui.space(aboutCard, 8);
+        MaterialButton checkUpdateBtn = ui.textButton("检查新版本");
+        checkUpdateBtn.setOnClickListener(v -> AppUpdateManager.checkForUpdates(this, false));
+        aboutCard.addView(checkUpdateBtn);
         ui.install(this, screen);
     }
     private MaterialButton timeButton() {

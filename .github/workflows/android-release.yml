@@ -8,7 +8,7 @@ on:
     paths-ignore: ['**.md', 'docs/**']
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: android-release-${{ github.ref }}
@@ -52,6 +52,13 @@ jobs:
           path: dist/
           if-no-files-found: error
           retention-days: 90
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: v${{ steps.package.outputs.version_name }}
+        run: |
+          gh release delete "$TAG" --yes || true
+          gh release create "$TAG" dist/* --title "$TAG" --notes "Automated release build for $TAG"
       - name: Upload test and lint reports
         if: ${{ always() }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
