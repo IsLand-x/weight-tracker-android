@@ -62,4 +62,17 @@ public class ScaleProtocolTest {
             assertEquals(midnight, ChartWindow.start(ChartWindow.endForFirstDay(first, period), period));
         }
     }
+    @Test public void decodesLiveWeightFluctuationAndStability() {
+        byte[] unstable = miPacket(0x00, 14000);
+        ScaleProtocol.LiveReading live1 = ScaleProtocol.decodeLive(ScaleProtocol.Kind.MI_WEIGHT, unstable);
+        assertNotNull(live1);
+        assertEquals(70.0, live1.weightKg, .0001);
+        assertFalse(live1.stable);
+
+        byte[] stable = miPacket(0x20, 14000);
+        ScaleProtocol.LiveReading live2 = ScaleProtocol.decodeLive(ScaleProtocol.Kind.MI_WEIGHT, stable);
+        assertNotNull(live2);
+        assertEquals(70.0, live2.weightKg, .0001);
+        assertTrue(live2.stable);
+    }
 }

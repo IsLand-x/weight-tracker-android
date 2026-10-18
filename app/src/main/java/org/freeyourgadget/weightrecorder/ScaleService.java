@@ -174,6 +174,15 @@ public class ScaleService extends Service {
             }
             if (!characteristic.equals(ScaleProtocol.HISTORY) && !characteristic.equals(ScaleProtocol.WEIGHT) && !characteristic.equals(ScaleProtocol.BODY)) return;
             boolean historical = characteristic.equals(ScaleProtocol.HISTORY);
+            if (!historical) {
+                ScaleProtocol.LiveReading live = ScaleProtocol.decodeLive(kind, bytes);
+                if (live != null) {
+                    Intent liveIntent = new Intent(getPackageName() + ".LIVE_WEIGHT");
+                    liveIntent.putExtra("weight", live.weightKg);
+                    liveIntent.putExtra("stable", live.stable);
+                    sendBroadcast(liveIntent);
+                }
+            }
             List<ScaleProtocol.Measurement> samples = ScaleProtocol.decode(kind, bytes, System.currentTimeMillis());
             for (ScaleProtocol.Measurement decoded : samples) {
                 ScaleProtocol.Measurement sample = historical ? decoded : ScaleProtocol.liveTime(decoded, System.currentTimeMillis());

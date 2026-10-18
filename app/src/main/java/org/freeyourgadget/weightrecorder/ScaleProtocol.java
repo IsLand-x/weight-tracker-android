@@ -41,6 +41,38 @@ public final class ScaleProtocol {
         if (n.equals("MI SCALE") || n.equals("MI SCALE2")) return Kind.MI_WEIGHT;
         return services.contains(WEIGHT_SERVICE) ? Kind.STANDARD : null;
     }
+    public static final class LiveReading {
+        public final double weightKg;
+        public final boolean stable;
+        public LiveReading(double weightKg, boolean stable) {
+            this.weightKg = weightKg;
+            this.stable = stable;
+        }
+    }
+    public static LiveReading decodeLive(Kind kind, byte[] bytes) {
+        if (bytes == null) return null;
+        if (kind == Kind.MI_BODY) {
+            if (bytes.length < 13) return null;
+            int flags = bytes[1] & 255;
+            double kg = xiaomiWeight(u16(bytes, 11), flags);
+            if (!Double.isFinite(kg) || kg < 3 || kg > 300) return null;
+            return new LiveReading(Math.round(kg * 1000) / 1000.0, stable(flags));
+        } else if (kind == Kind.MI_WEIGHT) {
+            if (bytes.length < 10) return null;
+            int flags = bytes[0] & 255;
+            double kg = xiaomiWeight(u16(bytes, 1), flags);
+            if (!Double.isFinite(kg) || kg < 3 || kg > 300) return null;
+            return new LiveReading(Math.round(kg * 1000) / 1000.0, stable(flags));
+        } else {
+            if (bytes.length < 3) return null;
+            int flags = bytes[0] & 255;
+            int raw = u16(bytes, 1);
+            if (raw == 65535) return null;
+            double kg = raw * ((flags & 1) != 0 ? 0.01 * 0.45359237 : 0.005);
+            if (!Double.isFinite(kg) || kg < 3 || kg > 300) return null;
+            return new LiveReading(Math.round(kg * 1000) / 1000.0, true);
+        }
+    }
     public static List<Measurement> decode(Kind kind, byte[] bytes, long now) {
         if (bytes == null) return Collections.emptyList();
         List<Measurement> result = new ArrayList<>();

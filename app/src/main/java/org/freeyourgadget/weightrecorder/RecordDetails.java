@@ -12,7 +12,9 @@ final class RecordDetails {
         if (!record.message.isEmpty()) message += "\n\n" + record.message;
         if (record.state.equals("failed")) message += "\n\n若请求超时，服务端可能已收到。请先确认当日记录，再重试。";
         MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(activity)
-                .setTitle(String.format(Locale.getDefault(), "%.2f kg", record.weight)).setMessage(message).setNegativeButton("关闭", null);
+                .setTitle(String.format(Locale.getDefault(), "%.2f kg", record.weight))
+                .setMessage(message)
+                .setNegativeButton("关闭", null);
         if ((record.state.equals("failed") || record.state.equals("local")) && !Settings.endpoint(activity, record.timeMillis).isEmpty()) {
             builder.setPositiveButton(record.state.equals("failed") ? "重试发送" : "发送这条记录", (d, w) -> {
                 if (WeightDatabase.get(activity).prepareRetry(record.id, Settings.endpoint(activity, record.timeMillis))) {
@@ -20,6 +22,18 @@ final class RecordDetails {
                 }
             });
         }
+        builder.setNeutralButton("删除", (d, w) -> {
+            new MaterialAlertDialogBuilder(activity)
+                    .setTitle("确认删除")
+                    .setMessage("确定要删除这条 " + String.format(Locale.getDefault(), "%.2f kg", record.weight) + " 的体重记录吗？")
+                    .setNegativeButton("取消", null)
+                    .setPositiveButton("删除", (delDialog, which) -> {
+                        WeightDatabase.get(activity).delete(record.id);
+                        WebhookWorker.changed(activity);
+                        refreshed.run();
+                    })
+                    .show();
+        });
         builder.show();
     }
 }

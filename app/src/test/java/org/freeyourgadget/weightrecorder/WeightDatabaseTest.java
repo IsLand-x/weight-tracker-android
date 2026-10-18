@@ -43,4 +43,12 @@ public class WeightDatabaseTest {
         assertEquals(-1, db.save(sample, "scale", "", true));
         assertEquals(1, db.all().size());
     }
+    @Test public void deleteRemovesRecordById() {
+        ScaleProtocol.Measurement sample = new ScaleProtocol.Measurement(1791264000000L, 70, true);
+        long id = db.save(sample, "scale", "");
+        assertEquals(1, db.all().size());
+        assertTrue(db.delete(id));
+        assertEquals(0, db.all().size());
+        assertNull(db.find(id));
+    }
 }

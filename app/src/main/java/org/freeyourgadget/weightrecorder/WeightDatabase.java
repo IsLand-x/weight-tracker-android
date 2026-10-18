@@ -75,4 +75,7 @@ public final class WeightDatabase extends SQLiteOpenHelper {
         ContentValues values = new ContentValues(); values.put("endpoint", endpoint); values.put("state", "pending"); values.put("message", "");
         return getWritableDatabase().update("weight", values, "id=? AND state IN ('failed','local')", new String[]{Long.toString(id)}) == 1;
     }
+    public synchronized boolean delete(long id) {
+        return getWritableDatabase().delete("weight", "id=?", new String[]{Long.toString(id)}) > 0;
+    }
 }
