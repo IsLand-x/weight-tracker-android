@@ -1,0 +1,9 @@
+{
+  "application_id": "org.freeyourgadget.weightrecorder",
+  "version_name": "1.2.0",
+  "version_code": 3,
+  "apk_sha256": "dcac0608b6369a75e4729e0c7636a4c821c1eb28ce6e18105cd98ef930d65939",
+  "signing_certificate_sha256": "2a9b362a22bd4a077496453036a670bc00a1f7f920c2d18896502c9536f8eb7a",
+  "commit": "552fc6be050ff3dad56c55152b0b1b335e698cc8",
+  "run_id": "39100005433"
+}

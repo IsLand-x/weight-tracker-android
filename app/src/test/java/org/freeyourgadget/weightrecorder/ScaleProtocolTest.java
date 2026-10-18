@@ -75,4 +75,23 @@ public class ScaleProtocolTest {
         assertEquals(70.0, live2.weightKg, .0001);
         assertTrue(live2.stable);
     }
+    @Test public void decodesAdvertisementServiceDataAndCattyUnit() {
+        // Test 斤 unit: flags = 0x10, raw = 14000 -> 14000 / 100 * 0.5 = 70.0 kg
+        assertEquals(70.0, ScaleProtocol.xiaomiWeight(14000, 0x10), .0001);
+
+        // Build a simulated BLE scan record containing 0x181d service data (len 13: len=13, type=0x16, uuid=181d, 10 bytes payload)
+        byte[] payload = miPacket(0x20, 14000);
+        byte[] scanRecord = new byte[payload.length + 4];
+        scanRecord[0] = (byte) (payload.length + 3); // length
+        scanRecord[1] = 0x16; // Service Data 16-bit UUID
+        scanRecord[2] = 0x1d; scanRecord[3] = 0x18; // 0x181D LE
+        System.arraycopy(payload, 0, scanRecord, 4, payload.length);
+
+        ScaleProtocol.LiveReading liveAd = ScaleProtocol.decodeAdvertisement(ScaleProtocol.Kind.MI_WEIGHT, scanRecord);
+        assertNotNull(liveAd);
+        assertEquals(70.0, liveAd.weightKg, .0001);
+        assertTrue(liveAd.stable);
+
+        assertEquals(1, ScaleProtocol.decodeAdvertisementSamples(ScaleProtocol.Kind.MI_WEIGHT, scanRecord, NOW).size());
+    }
 }

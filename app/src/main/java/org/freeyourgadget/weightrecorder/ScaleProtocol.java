@@ -99,7 +99,62 @@ public final class ScaleProtocol {
     }
     private static boolean stable(int flags) { return (flags & 0x20) != 0 && (flags & 0x80) == 0; }
     static double xiaomiWeight(int raw, int flags) {
-        return (flags & 1) != 0 ? raw / 100.0 * 0.45359237 : raw / 200.0;
+        if ((flags & 0x10) != 0) return (raw / 100.0) * 0.5; // 斤 (Chinese catty, 500g)
+        if ((flags & 0x01) != 0) return (raw / 100.0) * 0.45359237; // lbs
+        return raw / 200.0; // kg
+    }
+    public static LiveReading decodeAdvertisement(Kind kind, byte[] data) {
+        if (data == null || data.length < 3) return null;
+        LiveReading live = decodeLive(kind, data);
+        if (live != null) return live;
+        // If data is whole advertisement scan record, look for 181d / 181b service data payloads
+        // Ad structure: [len][type][payload...]
+        int offset = 0;
+        while (offset + 1 < data.length) {
+            int len = data[offset] & 0xFF;
+            if (len == 0 || offset + 1 + len > data.length) break;
+            int type = data[offset + 1] & 0xFF;
+            // 0x16 is Service Data (16-bit UUID)
+            if (type == 0x16 && len >= 3) {
+                int uuid16 = (data[offset + 2] & 0xFF) | ((data[offset + 3] & 0xFF) << 8);
+                byte[] serviceData = new byte[len - 3];
+                System.arraycopy(data, offset + 4, serviceData, 0, serviceData.length);
+                if (uuid16 == 0x181b) {
+                    LiveReading r = decodeLive(Kind.MI_BODY, serviceData);
+                    if (r != null) return r;
+                } else if (uuid16 == 0x181d) {
+                    LiveReading r = decodeLive(Kind.MI_WEIGHT, serviceData);
+                    if (r != null) return r;
+                }
+            }
+            offset += 1 + len;
+        }
+        return null;
+    }
+    public static List<Measurement> decodeAdvertisementSamples(Kind kind, byte[] data, long now) {
+        if (data == null || data.length < 3) return Collections.emptyList();
+        List<Measurement> direct = decode(kind, data, now);
+        if (!direct.isEmpty()) return direct;
+        int offset = 0;
+        while (offset + 1 < data.length) {
+            int len = data[offset] & 0xFF;
+            if (len == 0 || offset + 1 + len > data.length) break;
+            int type = data[offset + 1] & 0xFF;
+            if (type == 0x16 && len >= 3) {
+                int uuid16 = (data[offset + 2] & 0xFF) | ((data[offset + 3] & 0xFF) << 8);
+                byte[] serviceData = new byte[len - 3];
+                System.arraycopy(data, offset + 4, serviceData, 0, serviceData.length);
+                if (uuid16 == 0x181b) {
+                    List<Measurement> r = decode(Kind.MI_BODY, serviceData, now);
+                    if (!r.isEmpty()) return r;
+                } else if (uuid16 == 0x181d) {
+                    List<Measurement> r = decode(Kind.MI_WEIGHT, serviceData, now);
+                    if (!r.isEmpty()) return r;
+                }
+            }
+            offset += 1 + len;
+        }
+        return Collections.emptyList();
     }
     private static int u16(byte[] bytes, int offset) { return (bytes[offset] & 255) | ((bytes[offset + 1] & 255) << 8); }
     private static long date(byte[] bytes, int offset) {

@@ -20,6 +20,7 @@ import com.google.android.material.button.MaterialButton;
 import java.util.Locale;
 
 public class LiveWeighingActivity extends AppCompatActivity {
+    public static volatile boolean isRunning = false;
     private Ui ui;
     private TextView weightDisplay, statusText, subHint;
     private ProgressBar progress;
@@ -127,6 +128,7 @@ public class LiveWeighingActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
+        isRunning = true;
         ContextCompat.registerReceiver(this, liveReceiver,
                 new IntentFilter(getPackageName() + ".LIVE_WEIGHT"),
                 ContextCompat.RECEIVER_NOT_EXPORTED);
@@ -134,6 +136,7 @@ public class LiveWeighingActivity extends AppCompatActivity {
 
     @Override
     protected void onStop() {
+        isRunning = false;
         unregisterReceiver(liveReceiver);
         handler.removeCallbacksAndMessages(null);
         super.onStop();

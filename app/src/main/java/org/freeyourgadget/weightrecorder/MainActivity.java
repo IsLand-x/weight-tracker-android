@@ -71,7 +71,7 @@ public class MainActivity extends AppCompatActivity {
             if (intent == null) return;
             double weight = intent.getDoubleExtra("weight", 0);
             boolean stable = intent.getBooleanExtra("stable", false);
-            if (weight > 3 && !stable) {
+            if (weight > 3 && !LiveWeighingActivity.isRunning) {
                 Intent live = new Intent(MainActivity.this, LiveWeighingActivity.class);
                 live.putExtra("initial_weight", weight);
                 live.putExtra("initial_stable", stable);

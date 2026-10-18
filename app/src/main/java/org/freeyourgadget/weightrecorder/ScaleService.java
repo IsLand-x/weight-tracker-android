@@ -93,7 +93,31 @@ public class ScaleService extends Service {
     private final ScanCallback scanCallback = new ScanCallback() {
         @Override public void onScanResult(int callbackType, ScanResult result) {
             handler.post(() -> {
-                if (stopped || gatt != null || !scanning) return;
+                if (stopped || !scanning) return;
+                if (result.getScanRecord() != null) {
+                    byte[] rawBytes = result.getScanRecord().getBytes();
+                    ScaleProtocol.LiveReading live = ScaleProtocol.decodeAdvertisement(kind, rawBytes);
+                    if (live != null) {
+                        Intent liveIntent = new Intent(getPackageName() + ".LIVE_WEIGHT");
+                        liveIntent.putExtra("weight", live.weightKg);
+                        liveIntent.putExtra("stable", live.stable);
+                        sendBroadcast(liveIntent);
+                    }
+                    if (live != null && live.stable) {
+                        List<ScaleProtocol.Measurement> samples = ScaleProtocol.decodeAdvertisementSamples(kind, rawBytes, System.currentTimeMillis());
+                        for (ScaleProtocol.Measurement decoded : samples) {
+                            ScaleProtocol.Measurement sample = ScaleProtocol.liveTime(decoded, System.currentTimeMillis());
+                            String endpoint = Settings.endpoint(ScaleService.this, sample.timeMillis);
+                            long id = WeightDatabase.get(ScaleService.this).save(sample, address, endpoint, false);
+                            if (id >= 0 && !endpoint.isEmpty()) WebhookWorker.enqueue(ScaleService.this, id);
+                        }
+                        if (!samples.isEmpty()) {
+                            status("体重已保存 · 本次称重");
+                            WebhookWorker.changed(ScaleService.this);
+                        }
+                    }
+                }
+                if (gatt != null) return;
                 stopScan(); status("正在连接体重秤");
                 try { gatt = result.getDevice().connectGatt(ScaleService.this, false, callback, android.bluetooth.BluetoothDevice.TRANSPORT_LE); }
                 catch (SecurityException e) { status("连接权限不足"); stopSelf(); }
