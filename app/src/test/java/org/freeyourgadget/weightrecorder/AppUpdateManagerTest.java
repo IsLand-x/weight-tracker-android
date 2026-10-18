@@ -2,8 +2,13 @@
 package org.freeyourgadget.weightrecorder;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 import static org.junit.Assert.*;
 
+@RunWith(RobolectricTestRunner.class)
+@Config(sdk = 28, application = android.app.Application.class)
 public class AppUpdateManagerTest {
     @Test
     public void versionComparisonWorksCorrectly() {

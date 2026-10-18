@@ -27,8 +27,13 @@ import java.util.concurrent.Executors;
 public final class AppUpdateManager {
     private static final String RELEASES_API = "https://api.github.com/repos/IsLand-x/weight-tracker-android/releases/latest";
     private static final ExecutorService executor = Executors.newSingleThreadExecutor();
-    private static final Handler handler = new Handler(Looper.getMainLooper());
+    private static Handler handler;
     private static boolean checking = false;
+
+    private static synchronized Handler getHandler() {
+        if (handler == null) handler = new Handler(Looper.getMainLooper());
+        return handler;
+    }
 
     public static class UpdateInfo {
         public final String tagName;
@@ -86,18 +91,18 @@ public final class AppUpdateManager {
                 checking = false;
                 if (downloadUrl != null && isNewerVersion(activity, tagName)) {
                     final UpdateInfo update = new UpdateInfo(tagName, downloadUrl, body);
-                    handler.post(() -> {
+                    getHandler().post(() -> {
                         if (!activity.isFinishing()) {
                             showUpdateDialog(activity, update);
                         }
                     });
                 } else if (!silent) {
-                    handler.post(() -> Toast.makeText(activity, "当前已是最新版本", Toast.LENGTH_SHORT).show());
+                    getHandler().post(() -> Toast.makeText(activity, "当前已是最新版本", Toast.LENGTH_SHORT).show());
                 }
             } catch (Exception e) {
                 checking = false;
                 if (!silent) {
-                    handler.post(() -> Toast.makeText(activity, "检查更新失败，请稍后再试", Toast.LENGTH_SHORT).show());
+                    getHandler().post(() -> Toast.makeText(activity, "检查更新失败，请稍后再试", Toast.LENGTH_SHORT).show());
                 }
             }
         });
@@ -175,9 +180,9 @@ public final class AppUpdateManager {
                     }
                 }
 
-                handler.post(() -> installApk(activity, apkFile));
+                getHandler().post(() -> installApk(activity, apkFile));
             } catch (Exception e) {
-                handler.post(() -> Toast.makeText(activity, "更新包下载失败，请稍后再试", Toast.LENGTH_LONG).show());
+                getHandler().post(() -> Toast.makeText(activity, "更新包下载失败，请稍后再试", Toast.LENGTH_LONG).show());
             }
         });
     }
