@@ -105,10 +105,8 @@ public final class ScaleProtocol {
     }
     public static LiveReading decodeAdvertisement(Kind kind, byte[] data) {
         if (data == null || data.length < 3) return null;
-        LiveReading live = decodeLive(kind, data);
-        if (live != null) return live;
-        // If data is whole advertisement scan record, look for 181d / 181b service data payloads
-        // Ad structure: [len][type][payload...]
+        // If data is a whole advertisement scan record, search for 181d / 181b service data payloads
+        // BLE Ad structure: [len][type][payload...]
         int offset = 0;
         while (offset + 1 < data.length) {
             int len = data[offset] & 0xFF;
@@ -129,12 +127,10 @@ public final class ScaleProtocol {
             }
             offset += 1 + len;
         }
-        return null;
+        return decodeLive(kind, data);
     }
     public static List<Measurement> decodeAdvertisementSamples(Kind kind, byte[] data, long now) {
         if (data == null || data.length < 3) return Collections.emptyList();
-        List<Measurement> direct = decode(kind, data, now);
-        if (!direct.isEmpty()) return direct;
         int offset = 0;
         while (offset + 1 < data.length) {
             int len = data[offset] & 0xFF;
@@ -154,7 +150,7 @@ public final class ScaleProtocol {
             }
             offset += 1 + len;
         }
-        return Collections.emptyList();
+        return decode(kind, data, now);
     }
     private static int u16(byte[] bytes, int offset) { return (bytes[offset] & 255) | ((bytes[offset + 1] & 255) << 8); }
     private static long date(byte[] bytes, int offset) {
