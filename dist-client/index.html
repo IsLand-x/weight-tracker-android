@@ -92,21 +92,22 @@
     <p>专为本地无 KVM 虚拟化服务器打造的 Android 自动化部署桥接程序。无需公网 IP，开箱即用，双击直接缩入右下角系统托盘。</p>
 
     <div style="display: flex; gap: 12px; flex-wrap: wrap; margin: 20px 0;">
-      <a href="./weight-recorder-1.3.0-release.apk" class="download-btn" style="background: #188038; margin: 0;">📦 下载最新 Android APK (v1.3.0)</a>
+      <a href="./weight-recorder-1.3.1-release.apk" class="download-btn" style="background: #188038; margin: 0;">📦 下载最新 Android APK (v1.3.1)</a>
       <a href="./remote-bridge-windows.zip" class="download-btn" style="margin: 0;">⬇ 下载 Windows 调试助手 (.zip)</a>
     </div>
 
     <div style="background: #e6f4ea; border: 1px solid #ceead6; border-radius: 8px; padding: 14px 18px; margin-bottom: 20px;">
-      <div style="font-weight: 600; color: #137333; margin-bottom: 6px;">✨ 最新版本特性 (v1.3.0)：</div>
+      <div style="font-weight: 600; color: #137333; margin-bottom: 6px;">✨ 最新版本特性 (v1.3.1)：</div>
       <ul style="margin: 0; padding-left: 20px; color: #2d6b38; font-size: 14px; line-height: 1.6;">
+        <li><strong>踩秤波动响应优化</strong>：支持直接从 BLE 广播中实时捕获踩秤动态数值与稳定锁定，无需等待 GATT 缓慢连接握手。</li>
+        <li><strong>计量单位兼容增强</strong>：支持小米体重秤中斤（0x10）及磅（0x01）等多种单位标志位的自动转换。</li>
+        <li><strong>实时测重页面自管理</strong>：踩上体重秤自动切出测重界面显示数值跳动，数值锁定后自动保存并关闭返回。</li>
         <li><strong>应用内一键自动更新</strong>：启动时自动比对 GitHub Releases 最新版本，弹窗提示并支持一键下载与自动触发安装。</li>
-        <li><strong>踩秤实时波动界面</strong>：踩上体重秤自动跳转全屏动态界面，实时显示体重数值波动，待数据稳定后锁定并保存。</li>
         <li><strong>单条历史记录删除</strong>：点击任意历史记录详情页即可单条删除并确认，图表与统计即时同步刷新。</li>
-        <li><strong>首页连接自动检测</strong>：未连接请求连接，未开启蓝牙提示授权，超出范围自动重扫。</li>
         <li><strong>拖拽图表同步显示</strong>：拖动图表时，顶部大字号主数值区域实时同步显示选中点的体重与称重时间。</li>
       </ul>
       <div style="margin-top: 8px; font-size: 12px; color: #5f6368; word-break: break-all;">
-        <strong>APK SHA-256:</strong> <code>6ef24a40e2411cbc62cf0505a33e9efc1a359b26df6cc599a4a2df6d7ed46f8d</code>
+        <strong>APK SHA-256:</strong> <code>591fa9f593eb0b22ac3843c922ae43cfcf8f9544d38448534a4503398e030837</code>
       </div>
     </div>
 

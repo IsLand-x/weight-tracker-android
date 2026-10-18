@@ -25,7 +25,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public final class AppUpdateManager {
-    private static final String RELEASES_API = "https://api.github.com/repos/IsLand-x/weight-tracker-android/releases/latest";
+    public static final String COS_RELEASE_URL = "https://island-agent-images-1251186405.cos.ap-singapore.myqcloud.com/weight-recorder/release.json";
+    public static final String COS_LATEST_APK = "https://island-agent-images-1251186405.cos.ap-singapore.myqcloud.com/weight-recorder/weight-recorder-latest.apk";
+    public static final String GITHUB_RELEASES_API = "https://api.github.com/repos/IsLand-x/weight-tracker-android/releases/latest";
     private static final ExecutorService executor = Executors.newSingleThreadExecutor();
     private static Handler handler;
     private static boolean checking = false;
@@ -47,53 +49,90 @@ public final class AppUpdateManager {
         }
     }
 
+    public static UpdateInfo parseCosRelease(String jsonString) {
+        if (jsonString == null || jsonString.trim().isEmpty()) return null;
+        try {
+            JSONObject obj = new JSONObject(jsonString);
+            String versionName = obj.optString("version_name", "");
+            if (versionName.isEmpty()) return null;
+            String tagName = versionName.startsWith("v") || versionName.startsWith("V") ? versionName : "v" + versionName;
+            String downloadUrl = obj.optString("download_url", COS_LATEST_APK);
+            String body = obj.optString("body", "腾讯云对象存储（COS）最新版本 APK");
+            return new UpdateInfo(tagName, downloadUrl, body);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public static UpdateInfo parseGithubRelease(String jsonString) {
+        if (jsonString == null || jsonString.trim().isEmpty()) return null;
+        try {
+            JSONObject release = new JSONObject(jsonString);
+            String tagName = release.optString("tag_name", "");
+            String body = release.optString("body", "");
+            String downloadUrl = null;
+            JSONArray assets = release.optJSONArray("assets");
+            if (assets != null) {
+                for (int i = 0; i < assets.length(); i++) {
+                    JSONObject asset = assets.getJSONObject(i);
+                    String name = asset.optString("name", "");
+                    if (name.endsWith(".apk")) {
+                        downloadUrl = asset.optString("browser_download_url", "");
+                        break;
+                    }
+                }
+            }
+            if (downloadUrl == null) return null;
+            return new UpdateInfo(tagName, downloadUrl, body);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private static String fetchHttp(String urlStr, int timeoutMs) throws Exception {
+        URL url = new URL(urlStr);
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("GET");
+        conn.setRequestProperty("User-Agent", "WeightTracker-Android-Updater");
+        conn.setConnectTimeout(timeoutMs);
+        conn.setReadTimeout(timeoutMs);
+        if (conn.getResponseCode() != 200) return null;
+        try (Scanner scanner = new Scanner(conn.getInputStream(), "UTF-8").useDelimiter("\\A")) {
+            return scanner.hasNext() ? scanner.next() : "";
+        }
+    }
+
     public static void checkForUpdates(Activity activity, boolean silent) {
         if (checking) return;
         checking = true;
 
         executor.execute(() -> {
             try {
-                URL url = new URL(RELEASES_API);
-                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                conn.setRequestMethod("GET");
-                conn.setRequestProperty("Accept", "application/vnd.github.v3+json");
-                conn.setRequestProperty("User-Agent", "WeightTracker-Android-Updater");
-                conn.setConnectTimeout(8000);
-                conn.setReadTimeout(8000);
-
-                if (conn.getResponseCode() != 200) {
-                    checking = false;
-                    return;
-                }
-
-                String response;
-                try (Scanner scanner = new Scanner(conn.getInputStream(), "UTF-8").useDelimiter("\\A")) {
-                    response = scanner.hasNext() ? scanner.next() : "";
-                }
-
-                JSONObject release = new JSONObject(response);
-                String tagName = release.optString("tag_name", "");
-                String body = release.optString("body", "");
-                String downloadUrl = null;
-
-                JSONArray assets = release.optJSONArray("assets");
-                if (assets != null) {
-                    for (int i = 0; i < assets.length(); i++) {
-                        JSONObject asset = assets.getJSONObject(i);
-                        String name = asset.optString("name", "");
-                        if (name.endsWith(".apk")) {
-                            downloadUrl = asset.optString("browser_download_url", "");
-                            break;
-                        }
+                UpdateInfo update = null;
+                // 1. First try Tencent Cloud COS release.json
+                try {
+                    String cosJson = fetchHttp(COS_RELEASE_URL, 5000);
+                    if (cosJson != null) {
+                        update = parseCosRelease(cosJson);
                     }
+                } catch (Exception ignored) {}
+
+                // 2. Fallback to GitHub Releases API if COS is unavailable
+                if (update == null) {
+                    try {
+                        String ghJson = fetchHttp(GITHUB_RELEASES_API, 8000);
+                        if (ghJson != null) {
+                            update = parseGithubRelease(ghJson);
+                        }
+                    } catch (Exception ignored) {}
                 }
 
                 checking = false;
-                if (downloadUrl != null && isNewerVersion(activity, tagName)) {
-                    final UpdateInfo update = new UpdateInfo(tagName, downloadUrl, body);
+                if (update != null && isNewerVersion(activity, update.tagName)) {
+                    final UpdateInfo finalUpdate = update;
                     getHandler().post(() -> {
                         if (!activity.isFinishing()) {
-                            showUpdateDialog(activity, update);
+                            showUpdateDialog(activity, finalUpdate);
                         }
                     });
                 } else if (!silent) {
