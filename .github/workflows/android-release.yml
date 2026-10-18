@@ -58,12 +58,14 @@ jobs:
           TAG: v${{ steps.package.outputs.version_name }}
         run: |
           gh release delete "$TAG" --yes || true
-          gh release create "$TAG" dist/* --title "$TAG" --notes "### Weight Recorder $TAG
-- 首页自动检测体重秤连接状态并支持自动重连
-- 拖动趋势图时顶部大字号实时展示选中的体重数值
-- 踩上体重秤自动进入实时测重界面，显示波动并在稳定后自动锁定
-- 新增单条历史体重记录的删除功能
-- 支持基于 GitHub Releases 的应用内版本检测与一键更新"
+          gh release create "$TAG" dist/* --title "$TAG" --notes-file - <<'EOF'
+          ### Weight Recorder v1.3.0
+          - 首页自动检测体重秤连接状态并支持自动重连
+          - 拖动趋势图时顶部大字号实时展示选中的体重数值
+          - 踩上体重秤自动进入实时测重界面，显示波动并在稳定后自动锁定
+          - 新增单条历史体重记录的删除功能
+          - 支持基于 GitHub Releases 的应用内版本检测与一键更新
+          EOF
       - name: Upload test and lint reports
         if: ${{ always() }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
