@@ -31,6 +31,15 @@ public final class WeightChartView extends View {
     private boolean dragging, browseHistory;
     private WeightDatabase.Record selected;
     private final int morningColor, afternoonColor, text, grid;
+    private OnRecordSelectedListener listener;
+
+    public interface OnRecordSelectedListener {
+        void onRecordSelected(WeightDatabase.Record record);
+    }
+
+    public void setOnRecordSelectedListener(OnRecordSelectedListener listener) {
+        this.listener = listener;
+    }
 
     public WeightChartView(Context context, int text, int grid, int morningColor, int afternoonColor) {
         super(context); this.text = text; this.grid = grid;
@@ -43,13 +52,16 @@ public final class WeightChartView extends View {
             long id = selected.id; selected = null;
             for (WeightDatabase.Record r : values) if (r.id == id) { selected = r; break; }
         }
-        updateDescription(); invalidate();
+        updateDescription(); notifySelected(); invalidate();
     }
     public void setPeriod(int value) {
         period = value; end = ChartWindow.dayEnd(System.currentTimeMillis()); selected = null;
-        updateDescription(); invalidate();
+        updateDescription(); notifySelected(); invalidate();
     }
     public void setBrowseHistory(boolean value) { browseHistory = value; updateDescription(); }
+    private void notifySelected() {
+        if (listener != null) listener.onRecordSelected(selected);
+    }
     private void updateDescription() {
         setContentDescription(selected == null ? "上午和下午体重趋势图，" + (browseHistory ? "左右拖动查看历史，点击查看数据" : "点击或滑动查看数据")
                 : "体重趋势，" + Settings.periods(getContext()).label(selected.timeMillis) + "，" + format(detailFormat, selected.timeMillis) + "，" + selected.weight + "公斤");
@@ -139,7 +151,7 @@ public final class WeightChartView extends View {
                 if (distance < best) { selected = r; best = distance; }
             }
         }
-        updateDescription(); invalidate();
+        updateDescription(); notifySelected(); invalidate();
     }
     @Override public boolean onTouchEvent(MotionEvent event) {
         switch (event.getActionMasked()) {
@@ -158,7 +170,7 @@ public final class WeightChartView extends View {
                         long span = gestureEnd - ChartWindow.start(gestureEnd, period);
                         long earliest = Math.min(ChartWindow.dayEnd(System.currentTimeMillis()), ChartWindow.endForFirstDay(records.get(0).timeMillis, period));
                         end = Math.max(earliest, Math.min(ChartWindow.dayEnd(System.currentTimeMillis()), gestureEnd - (long) (dx / Math.max(dp(30), right() - left()) * span)));
-                        selected = null; updateDescription(); invalidate();
+                        selected = null; updateDescription(); notifySelected(); invalidate();
                     }
                 }
                 return true;

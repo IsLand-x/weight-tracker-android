@@ -43,13 +43,14 @@ import java.util.Map;
 import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
-    private TextView deviceInfo, deviceName, latest, latestDate, latestPeriod, delivery, delta;
+    private TextView deviceInfo, deviceName, latest, latestDate, latestPeriod, delivery, delta, caption;
     private Ui ui;
     private LinearLayout history;
     private Button connect;
     private WeightChartView chart;
     private int text, muted, primary;
     private boolean registered, scanAfterPermission;
+    private WeightDatabase.Record selectedRecord;
     private final Handler handler = new Handler(Looper.getMainLooper());
     private BluetoothLeScanner scanner;
     private AlertDialog scanDialog;
@@ -77,7 +78,7 @@ public class MainActivity extends AppCompatActivity {
         screen.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1));
 
         LinearLayout summary = ui.card(root, 16); LinearLayout summaryHeading = row();
-        TextView caption = label("最新体重", 13, muted);
+        caption = label("最新体重", 13, muted);
         summaryHeading.addView(caption, new LinearLayout.LayoutParams(0, -2, 1));
         delta = label("", 12, muted); summaryHeading.addView(delta); summary.addView(summaryHeading);
         if (getResources().getConfiguration().fontScale > 1.3f) {
@@ -113,6 +114,10 @@ public class MainActivity extends AppCompatActivity {
         }
         trendHeading.addView(periods, ranges); trend.addView(trendHeading);
         chart = new WeightChartView(this, muted, color(R.color.wr_grid), primary, ui.afternoon);
+        chart.setOnRecordSelectedListener(r -> {
+            selectedRecord = r;
+            updateTopDisplay();
+        });
         periods.addOnButtonCheckedListener((group, id, checked) -> {
             if (!checked) return; int period = values[id - 2001];
             Settings.prefs(this).edit().putInt("period", period).apply(); chart.setPeriod(period);
@@ -158,6 +163,45 @@ public class MainActivity extends AppCompatActivity {
     private TextView label(String value, float size, int color) { return ui.label(value, size, color); }
     private MaterialButton textButton(String title) { return ui.textButton(title); }
     private void space(LinearLayout parent, int height) { parent.addView(new View(this), new LinearLayout.LayoutParams(1, dp(height))); }
+    private void updateTopDisplay() {
+        List<WeightDatabase.Record> records = WeightDatabase.get(this).all();
+        if (records.isEmpty()) {
+            caption.setText("最新体重");
+            latest.setText("—"); latestDate.setText("尚未记录"); latestPeriod.setText(""); delta.setText("");
+            delivery.setText("连接体重秤后自动保存"); delivery.setOnClickListener(null);
+            return;
+        }
+        if (selectedRecord != null) {
+            caption.setText("选中记录");
+            latest.setText(String.format(Locale.getDefault(), "%.2f", selectedRecord.weight));
+            latestDate.setText(Ui.date(selectedRecord.timeMillis, "MM月dd日 HH:mm"));
+            latestPeriod.setText(Settings.periods(this).label(selectedRecord.timeMillis));
+            latestPeriod.setTextColor(Settings.periods(this).isMorning(selectedRecord.timeMillis) ? primary : ui.afternoon);
+            WeightDatabase.Record latestRecord = records.get(records.size() - 1);
+            if (selectedRecord.id == latestRecord.id && records.size() > 1) {
+                double diff = latestRecord.weight - records.get(records.size() - 2).weight;
+                delta.setText(String.format(Locale.getDefault(), "较上次 %+.2f kg", diff));
+            } else {
+                double diffFromLatest = selectedRecord.weight - latestRecord.weight;
+                delta.setText(String.format(Locale.getDefault(), "距最新 %+.2f kg", diffFromLatest));
+            }
+            delivery.setText(Ui.recordState(selectedRecord.state) + (selectedRecord.message.isEmpty() || "screenshot-restore".equals(selectedRecord.source) ? "" : " · " + selectedRecord.message));
+            delivery.setTextColor(selectedRecord.state.equals("failed") ? color(R.color.wr_error) : muted);
+            delivery.setOnClickListener(v -> showRecord(selectedRecord));
+        } else {
+            caption.setText("最新体重");
+            WeightDatabase.Record last = records.get(records.size() - 1);
+            latest.setText(String.format(Locale.getDefault(), "%.2f", last.weight)); latestDate.setText(Ui.date(last.timeMillis, "MM月dd日 HH:mm"));
+            latestPeriod.setText(Settings.periods(this).label(last.timeMillis)); latestPeriod.setTextColor(Settings.periods(this).isMorning(last.timeMillis) ? primary : ui.afternoon);
+            if (records.size() > 1) {
+                double difference = last.weight - records.get(records.size() - 2).weight;
+                delta.setText(String.format(Locale.getDefault(), "较上次 %+.2f kg", difference));
+            } else delta.setText("首次记录");
+            delivery.setText(Ui.recordState(last.state) + (last.message.isEmpty() || "screenshot-restore".equals(last.source) ? "" : " · " + last.message));
+            delivery.setTextColor(last.state.equals("failed") ? color(R.color.wr_error) : muted);
+            delivery.setOnClickListener(v -> showRecord(last));
+        }
+    }
     private void refresh() {
         List<WeightDatabase.Record> records = WeightDatabase.get(this).all(); chart.setRecords(records);
         boolean tracking = Settings.prefs(this).getBoolean("tracking", false);
@@ -167,24 +211,32 @@ public class MainActivity extends AppCompatActivity {
         deviceName.setContentDescription(name + (type.isEmpty() ? "" : "，" + type) + (model.isEmpty() ? "" : "，型号：" + model));
         connect.setText(tracking ? "断开" : "连接"); history.removeAllViews();
         if (records.isEmpty()) {
-            latest.setText("—"); latestDate.setText("尚未记录"); latestPeriod.setText(""); delta.setText("");
-            delivery.setText("连接体重秤后自动保存"); delivery.setOnClickListener(null);
+            updateTopDisplay();
             history.addView(label("称重后，记录会自动显示在这里", 14, muted)); return;
         }
-        WeightDatabase.Record last = records.get(records.size() - 1);
-        latest.setText(String.format(Locale.getDefault(), "%.2f", last.weight)); latestDate.setText(Ui.date(last.timeMillis, "MM月dd日 HH:mm"));
-        latestPeriod.setText(Settings.periods(this).label(last.timeMillis)); latestPeriod.setTextColor(Settings.periods(this).isMorning(last.timeMillis) ? primary : ui.afternoon);
-        if (records.size() > 1) {
-            double difference = last.weight - records.get(records.size() - 2).weight;
-            delta.setText(String.format(Locale.getDefault(), "较上次 %+.2f kg", difference));
-        } else delta.setText("首次记录");
-        delivery.setText(Ui.recordState(last.state) + (last.message.isEmpty() || "screenshot-restore".equals(last.source) ? "" : " · " + last.message));
-        delivery.setTextColor(last.state.equals("failed") ? color(R.color.wr_error) : muted);
-        delivery.setOnClickListener(v -> showRecord(last));
+        updateTopDisplay();
         for (int i = records.size() - 1; i >= Math.max(0, records.size() - 3); i--) {
             WeightDatabase.Record r = records.get(i); LinearLayout item = ui.recordRow(r, true);
             item.setOnClickListener(v -> showRecord(r)); history.addView(item);
             if (i > Math.max(0, records.size() - 3)) ui.divider(history);
+        }
+    }
+    private void autoConnectIfConfigured() {
+        if (!hasBluetoothPermissions()) { permissions(false); return; }
+        if (!bluetoothReady()) return;
+        String address = Settings.prefs(this).getString("address", "");
+        if (address.isEmpty()) {
+            beginScanWithPermissions();
+            return;
+        }
+        boolean tracking = Settings.prefs(this).getBoolean("tracking", false);
+        if (!tracking) {
+            startTracking();
+        } else {
+            String conn = Settings.prefs(this).getString("connection", "");
+            if (conn.contains("未发现") || conn.contains("超时") || conn.contains("休眠") || conn.contains("未连接")) {
+                ContextCompat.startForegroundService(this, new Intent(this, ScaleService.class));
+            }
         }
     }
     private void showAllRecords() { startActivity(new Intent(this, RecordsActivity.class)); }
@@ -267,6 +319,7 @@ public class MainActivity extends AppCompatActivity {
     }
     @Override protected void onStart() {
         super.onStart(); ContextCompat.registerReceiver(this, changed, new IntentFilter(getPackageName() + ".CHANGED"), ContextCompat.RECEIVER_NOT_EXPORTED); registered = true; refresh();
+        autoConnectIfConfigured();
     }
     @Override protected void onStop() {
         stopScan(); if (registered) { unregisterReceiver(changed); registered = false; } super.onStop();

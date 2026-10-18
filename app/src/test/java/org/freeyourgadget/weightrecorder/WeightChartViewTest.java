@@ -44,4 +44,22 @@ public class WeightChartViewTest {
         assertTrue(view.getContentDescription().toString().contains("72.0公斤"));
         view.setPeriod(30); assertFalse(view.getContentDescription().toString().contains("72.0公斤"));
     }
+    @Test public void selectionListenerNotifiedOnTouchAndPeriodChange() {
+        Context context = RuntimeEnvironment.getApplication();
+        WeightChartView view = new WeightChartView(context, 0, 0, 0, 0); view.layout(0, 0, 400, 260);
+        WeightDatabase.Record record = new WeightDatabase.Record(); record.id = 1; record.timeMillis = System.currentTimeMillis(); record.weight = 65.5;
+        view.setRecords(Arrays.asList(record));
+        final WeightDatabase.Record[] selected = new WeightDatabase.Record[1];
+        view.setOnRecordSelectedListener(r -> selected[0] = r);
+        float density = context.getResources().getDisplayMetrics().density;
+        float x = 47 * density + 10;
+        float y = 34 * density + 10;
+        touch(view, MotionEvent.ACTION_DOWN, x, y);
+        assertNotNull(selected[0]);
+        assertEquals(1, selected[0].id);
+        assertEquals(65.5, selected[0].weight, 0.001);
+
+        view.setPeriod(30);
+        assertNull(selected[0]);
+    }
 }
