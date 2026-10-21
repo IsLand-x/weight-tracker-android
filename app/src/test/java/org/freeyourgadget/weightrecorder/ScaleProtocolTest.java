@@ -75,6 +75,11 @@ public class ScaleProtocolTest {
         assertEquals(70.0, live2.weightKg, .0001);
         assertTrue(live2.stable);
     }
+    @Test public void steppingOffDoesNotTriggerANewLiveWeighing() {
+        assertNull(ScaleProtocol.decodeLive(ScaleProtocol.Kind.MI_WEIGHT, miPacket(0xa0, 14000)));
+        byte[] body = new byte[13]; body[1] = (byte) 0xa0; body[11] = (byte) 0xb0; body[12] = 0x36;
+        assertNull(ScaleProtocol.decodeLive(ScaleProtocol.Kind.MI_BODY, body));
+    }
     @Test public void decodesAdvertisementServiceDataAndCattyUnit() {
         // Test 斤 unit: flags = 0x10, raw = 14000 -> 14000 / 100 * 0.5 = 70.0 kg
         assertEquals(70.0, ScaleProtocol.xiaomiWeight(14000, 0x10), .0001);

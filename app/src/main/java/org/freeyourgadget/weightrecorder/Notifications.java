@@ -30,6 +30,17 @@ final class Notifications {
         return builder(c, "scale").setContentTitle("体重秤已开启").setContentText(text).setOngoing(true)
                 .addAction(0, "断开", stop).build();
     }
+    static void weighing(Context c, double weight, boolean stable) {
+        if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(c, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) return;
+        Intent open = new Intent(c, LiveWeighingActivity.class)
+                .putExtra("initial_weight", weight).putExtra("initial_stable", stable);
+        PendingIntent content = PendingIntent.getActivity(c, 2, open,
+                PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
+        String title = String.format(java.util.Locale.getDefault(), stable ? "体重已锁定 · %.2f kg" : "正在称重 · %.2f kg", weight);
+        c.getSystemService(NotificationManager.class).notify(2,
+                builder(c, "scale").setContentIntent(content).setContentTitle(title)
+                        .setContentText("点击查看实时称重仪表盘").setOnlyAlertOnce(true).setAutoCancel(true).build());
+    }
     static void success(Context c, long id, String message) {
         if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(c, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) return;
         c.getSystemService(NotificationManager.class).notify((int) (id % (Integer.MAX_VALUE - 100)) + 100,

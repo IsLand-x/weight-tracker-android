@@ -66,19 +66,6 @@ public class MainActivity extends AppCompatActivity {
     private final BroadcastReceiver changed = new BroadcastReceiver() {
         @Override public void onReceive(Context c, Intent intent) { refresh(); }
     };
-    private final BroadcastReceiver liveWeightReceiver = new BroadcastReceiver() {
-        @Override public void onReceive(Context context, Intent intent) {
-            if (intent == null) return;
-            double weight = intent.getDoubleExtra("weight", 0);
-            boolean stable = intent.getBooleanExtra("stable", false);
-            if (weight > 3 && !LiveWeighingActivity.isRunning) {
-                Intent live = new Intent(MainActivity.this, LiveWeighingActivity.class);
-                live.putExtra("initial_weight", weight);
-                live.putExtra("initial_stable", stable);
-                startActivity(live);
-            }
-        }
-    };
     private static final class Candidate { String address, name; ScaleProtocol.Kind kind; }
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
@@ -332,13 +319,12 @@ public class MainActivity extends AppCompatActivity {
     }
     @Override protected void onStart() {
         super.onStart(); ContextCompat.registerReceiver(this, changed, new IntentFilter(getPackageName() + ".CHANGED"), ContextCompat.RECEIVER_NOT_EXPORTED);
-        ContextCompat.registerReceiver(this, liveWeightReceiver, new IntentFilter(getPackageName() + ".LIVE_WEIGHT"), ContextCompat.RECEIVER_NOT_EXPORTED);
         registered = true; refresh();
         autoConnectIfConfigured();
         AppUpdateManager.checkForUpdates(this, true);
     }
     @Override protected void onStop() {
-        stopScan(); if (registered) { unregisterReceiver(changed); unregisterReceiver(liveWeightReceiver); registered = false; } super.onStop();
+        stopScan(); if (registered) { unregisterReceiver(changed); registered = false; } super.onStop();
     }
     @Override protected void onDestroy() {
         stopScan(); handler.removeCallbacksAndMessages(null); super.onDestroy();

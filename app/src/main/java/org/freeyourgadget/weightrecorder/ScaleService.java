@@ -98,7 +98,7 @@ public class ScaleService extends Service {
                     byte[] rawBytes = result.getScanRecord().getBytes();
                     ScaleProtocol.LiveReading live = ScaleProtocol.decodeAdvertisement(kind, rawBytes);
                     if (live != null) {
-                        Intent liveIntent = new Intent(getPackageName() + ".LIVE_WEIGHT");
+                        Intent liveIntent = new Intent(getPackageName() + ".LIVE_WEIGHT").setPackage(getPackageName());
                         liveIntent.putExtra("weight", live.weightKg);
                         liveIntent.putExtra("stable", live.stable);
                         sendBroadcast(liveIntent);
@@ -201,7 +201,7 @@ public class ScaleService extends Service {
             if (!historical) {
                 ScaleProtocol.LiveReading live = ScaleProtocol.decodeLive(kind, bytes);
                 if (live != null) {
-                    Intent liveIntent = new Intent(getPackageName() + ".LIVE_WEIGHT");
+                    Intent liveIntent = new Intent(getPackageName() + ".LIVE_WEIGHT").setPackage(getPackageName());
                     liveIntent.putExtra("weight", live.weightKg);
                     liveIntent.putExtra("stable", live.stable);
                     sendBroadcast(liveIntent);

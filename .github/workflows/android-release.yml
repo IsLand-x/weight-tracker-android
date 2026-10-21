@@ -57,17 +57,13 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: v${{ steps.package.outputs.version_name }}
         run: |
-          gh release delete "$TAG" --yes || true
           gh release create "$TAG" dist/* --title "$TAG" --notes-file - <<EOF
-          ### Weight Recorder \$TAG
-          - 接入腾讯云对象存储（COS）作为应用更新检测与高速下载源
-          - 优先通过 COS 快速获取最新版本信息，并保留 GitHub Releases 双重备用
-          - 优化踩秤响应：支持从 BLE 广播直接捕获实时体重波动与锁定数据
-          - 增加斤（0x10）等多种单位解析兼容
-          - 优化实时测重浮动页面的唤醒与生命周期管理
-          - 首页自动检测体重秤连接状态并支持自动重连
-          - 拖动趋势图时顶部大字号实时展示选中的体重数值
-          - 新增单条历史体重记录的删除功能
+          ### Weight Recorder $TAG
+          - 新增独立实时称重仪表盘，指针、盘内数字及下方数字同步平滑变化
+          - 支持 100、110、200 kg 三档量程，默认 110 kg，记住上次选择
+          - 从任意前台页面自动进入称重页，后台通过称重通知进入
+          - 稳定后锁定并保留结果，点击完成返回，旋转屏幕后保留测量结果
+          - 过滤离秤信号并抑制重复弹页，超量程时保留真实数字并提示切换量程
           EOF
       - name: Upload test and lint reports
         if: ${{ always() }}

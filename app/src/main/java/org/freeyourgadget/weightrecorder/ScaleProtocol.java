@@ -54,12 +54,14 @@ public final class ScaleProtocol {
         if (kind == Kind.MI_BODY) {
             if (bytes.length < 13) return null;
             int flags = bytes[1] & 255;
+            if ((flags & 0x80) != 0) return null; // Weight removed: not a new weighing.
             double kg = xiaomiWeight(u16(bytes, 11), flags);
             if (!Double.isFinite(kg) || kg < 3 || kg > 300) return null;
             return new LiveReading(Math.round(kg * 1000) / 1000.0, stable(flags));
         } else if (kind == Kind.MI_WEIGHT) {
             if (bytes.length < 10) return null;
             int flags = bytes[0] & 255;
+            if ((flags & 0x80) != 0) return null; // Weight removed: not a new weighing.
             double kg = xiaomiWeight(u16(bytes, 1), flags);
             if (!Double.isFinite(kg) || kg < 3 || kg > 300) return null;
             return new LiveReading(Math.round(kg * 1000) / 1000.0, stable(flags));
