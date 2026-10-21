@@ -1,11 +1,11 @@
 {
   "application_id": "org.freeyourgadget.weightrecorder",
-  "version_name": "1.3.2",
-  "version_code": 6,
-  "apk_sha256": "6154d3eda487192b37f58ce147ca7313456888460a8dbfab69461acb69884e8c",
+  "version_name": "1.3.3",
+  "version_code": 7,
+  "apk_sha256": "a256cf53477290b8ec2eeb638f03ef2291fbfd1e734d8f5f4c34f819a557c7a0",
   "signing_certificate_sha256": "2a9b362a22bd4a077496453036a670bc00a1f7f920c2d18896502c9536f8eb7a",
-  "commit": "af3d3a1a69451b9c02aa6c3e35b58d24f2ce6e4d",
-  "run_id": "39104008148",
-  "download_url": "https://island-agent-images-1251186405.cos.ap-singapore.myqcloud.com/weight-recorder/weight-recorder-1.3.2-release.apk",
-  "body": "v1.3.2 \u817e\u8baf\u4e91\u5bf9\u8c61\u5b58\u50a8\u9ad8\u901f\u66f4\u65b0\u6e90\uff1a\u652f\u6301\u4f18\u5148\u4ece COS \u68c0\u6d4b\u4e0e\u4e0b\u8f7d\u65b0\u7248\u672c\uff0c\u4f18\u5316\u8e29\u79e4\u6ce2\u52a8\u6355\u83b7\u4e0e\u5355\u4f4d\u517c\u5bb9\u3002"
+  "commit": "3477546bc21b0e405dd3cbbb93b981f6193a559f",
+  "run_id": "39532041882",
+  "download_url": "https://island-agent-images-1251186405.cos.ap-singapore.myqcloud.com/weight-recorder/weight-recorder-1.3.3-release.apk",
+  "body": "v1.3.3：新增实时称重仪表盘，指针与数字同步变化；支持 100/110/200 kg 量程并记住选择；稳定结果锁定；从任意前台页面自动进入，后台可点击通知查看。"
 }

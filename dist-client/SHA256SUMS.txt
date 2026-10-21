@@ -1,1 +1,1 @@
-6154d3eda487192b37f58ce147ca7313456888460a8dbfab69461acb69884e8c  weight-recorder-1.3.2-release.apk
+a256cf53477290b8ec2eeb638f03ef2291fbfd1e734d8f5f4c34f819a557c7a0  weight-recorder-1.3.3-release.apk
